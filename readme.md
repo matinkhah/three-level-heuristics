@@ -1,4 +1,4 @@
-# Information State and Evaluation Cost in Single-Solution Heuristic Search: A Three-Level Taxonomy
+# Information Capacity and Acquisition Cost in Heuristic Search: A Three-Level Cybernetic Taxonomy
 
 [![Python Version](https://shields.io)](https://python.org)
 [![License: MIT](https://shields.io)](https://opensource.org)
@@ -79,7 +79,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ```bibtex
 @article{matinkhah2026information,
-  title={Information State and Evaluation Cost in Single-Solution Heuristic Search: A Three-Level Taxonomy},
+  title={Information Capacity and Acquisition Cost in Heuristic Search: A Three-Level Cybernetic Taxonomy},
   author={Matinkhah, M. A.},
   journal={IEEE Transactions on Cybernetics (Under Review)},
   year={2026}
