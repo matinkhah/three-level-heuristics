@@ -1,85 +1,98 @@
-# Budget-Aware Evaluation of Information-Driven Adaptive Search
+# three-level-heuristics
 
+Code, raw results and figure scripts for the paper **"Budget-Aware Evaluation of Information-Driven Adaptive Search"**.
 
-This repository contains the official, self-contained implementation pipeline for the paper "Budget-Aware Evaluation of Information-Driven Adaptive Search".
-Rather than treating metaheuristics blindly, this framework models adaptive parameter control as a closed-loop system where information-gathering measurements compete directly with optimization steps for the exact same resource: objective function evaluations (FEs).
+The paper asks how adaptive search controllers should be evaluated when the information they use costs objective evaluations drawn from the same budget as the search itself. It studies this in one controlled engine, Bernoulli jump--step search (BJS), by charging every probe and grid evaluation to a common budget and comparing each charged controller with a free-information counterfactual and a fixed baseline.
 
-🔬 Framework & Core Methodology
+This repository reproduces every experiment, statistical test, table and figure in the paper. The conclusions apply to the tested engine, controllers, benchmarks and budgets, as stated in the paper's Limitations.
 
-The code evaluates adaptive search under a strict common-budget constraint, introducing metrics to separate the optimization value of a controller's decisions from the opportunity cost of acquiring its information:
-* Nominal Information Capacity (κ): The maximum bits of variety an information state can theoretically represent.
-* Acquisition Cost (a): The number of FEs consumed purely to build an information state.
-* Realized Control-Output Entropy (R): The empirical Shannon entropy of the quantized parameters produced along search trajectories.
-* Free-Information Counterfactuals: A diagnostic mechanism that runs adaptive policies without charging their probes to isolate the cost penalty (P) from behavioral value (V).
+## What is studied
 
-Three-Level Information Taxonomy
+| Item | Setting |
+|---|---|
+| Engine | BJS: with probability `p` a uniform global proposal, otherwise a Gaussian step of size `sigma`; elitist acceptance |
+| Benchmarks | 10 shifted functions (Ackley, Griewank, HappyCat, Rastrigin, Rosenbrock, Salomon, Schaffer N.2, Schwefel 2.22, Sphere, Weierstrass), domain [-5.12, 5.12]^D |
+| Dimensions | D = 2 and D = 10 (main suite); D = 4 (tuning task), D = 5 (small-budget check) |
+| Budget | B = 1000 D function evaluations (FEs), shared by search and information acquisition |
+| Instances | 30 paired instances per setting (same shifts and random streams across methods) |
+| Statistics | Paired Wilcoxon tests with Holm correction; equivalence tests where "no difference" is claimed |
 
-1. Level 1 (Uninformed): Baseline states with zero capacity (κ = 0), acting as static references (e.g., constant jump probability p).
-2. Level 2 (Compressed State): Dynamic feedback using zero-cost historical markers (rejection rates, success counters) or budget-charged Machine Learning (ML) probe-based feedback.
-3. Level 3 (Exhaustive Tables): High-capacity spatial structures that tabulate macroscopic landscape properties (e.g., coordinate grids) followed by localized refinement.
+Policies compared (paper Table II): constant `p` (including 0.05, 0.2, 0.5 and a grid), decay-`p`, History-BJS, one-fifth success rule (controls `sigma`), ML-BJS (learned table from the share of 8 random probes that improve), and grid-plus-refinement. Probe controllers are run in **charged**, **free** (diagnostic counterfactual, not deployable) and **reuse** (an improving probe is accepted as a move) variants.
 
-💻 Repository Structure & Codebase
+Offline training of the learned controller is **not** charged to the online budget; this convention favors the learned policy and is stated in the paper. Only FEs are counted, not wall-clock time or energy.
 
-The implementation is written cleanly without heavy framework overhead to prioritize deterministic replication across random streams, seeds, and coordinate offsets:
-* run_all_experiments.py: Implements the baseline pipeline over the initial 5 benchmark problems (Sphere, Rastrigin, Ackley, Griewank, Rosenbrock).
-* extend_new_functions.py: Extends validation to 5 additional complex, non-differentiable, and highly multimodal landscapes (Schwefel 2.22, Weierstrass, HappyCat, Salomon, Schaffer N.2).
-* tai_experiments_v2.py: The unified, production-grade experiment runner. It includes the complete synthetic suite (\(D \in \{2, 10\}\)), the baseline repository checks, an embedded budget sweep (\(0.1B \dots 2B\)), a small-budget comparison with Optuna TPE (D=5, B=200), and a real-world machine learning workload (hyperparameter optimization of a Multi-Layer Perceptron on scikit-learn digits).
+## Repository layout
 
-🚀 Execution Guide (Google Colab / Local Machine)
+| File | Role |
+|---|---|
+| `experiments.py` | Round 1 (hypotheses H1--H4): main suite, writes `raw_D2.csv`, `raw_D10.csv` |
+| `experiments2.py` | Round 2 (hypotheses H5--H8, exploratory): writes `raw2_D2.csv`, `raw2_D10.csv` |
+| `logging_exp.py` | Realized control-output entropy and probe-state diagnostics, writes `logging_out.json` |
+| `analysis2.py` | Tables (`t*.tex`), tests, `facts.json`, `fig_sweep2.pdf` |
+| `fig_info.py` | Capacity versus acquisition-cost figure, writes `fig_info.pdf` |
+| `tai_experiments_v2.py` | Extended checks (paper section "Extended Checks"): single self-contained script |
+| `raw*.csv`, `logging_out.json` | Raw results behind the main tables |
+| `fig_info.pdf`, `fig_sweep2.pdf` | Figures used in the paper |
+| `archive/` | Older drafts and scripts, not needed for reproduction |
 
+## Requirements
 
-Prerequisites
+Python 3 with `numpy`, `scipy`, `pandas`. The extended script additionally needs `scikit-learn` (digits dataset and MLP) and `optuna` (TPE baseline). The extended run was tested in Google Colab with Python 3.13, numpy 2.1.3, scipy 1.16.3, scikit-learn 1.6.1, pandas 2.2.3 and Optuna 5.0.0 (the versions the script prints at start-up). A different NumPy or SciPy version can change random streams; see "Verification" below.
 
-The script compiles using standard mathematical and data manipulation utilities. Ensure you have the core scientific stack installed:
-bash
-pip install numpy scipy scikit-learn pandas optuna
-Use code with caution.
-
-1. Verification & Smoke Test
-
-To confirm environment compatibility and verify your environment handles the data collection loop safely, toggle the QUICK flag to True at the top of the script and run:
-bash
-python tai_experiments_v2.py
-Use code with caution.
-(This completes in under 2 minutes with reduced sample seeds).
-
-2. Full Reproduction Suite
-
-To generate the complete dataset, descriptive statistics, and diagnostics used in the paper:
-1. Open tai_experiments_v2.py.
-2. Ensure QUICK = False is set.
-3. Set your target multiprocessing count (e.g., WORKERS = 2 for a standard free Colab instance).
-4. Run the file:
-bash
-python tai_experiments_v2.py
-Use code with caution.
-(Takes approximately 15–25 minutes depending on your CPU configuration).
-
-📊 Outputs & Validation Artifacts
-
-All results are compiled locally inside the auto-created ./tai_results/ directory and packed cleanly into tai_results.zip:
-* expB_synthetic.csv: Compiled raw records containing global evaluation trajectories across seeds and function landscapes.
-* expA_hpo.csv: Raw execution metrics mapping error performance profiles during the real ML workload training tasks.
-* expB_tests.csv / expA_tests_val.csv: Multi-family Holm-corrected paired Wilcoxon signed-rank matrices.
-* controller_training.json: Information log detailing training labels, mutual information profiles, and base entropy tracking measurements.
-
-Bit-Identical Integrity Check
-
-When running tai_experiments_v2.py, the pipeline automatically down-streams the raw reference zip (results_extended.zip) from GitHub and performs a cell-by-cell row check. A successful run will output:
-text
-3600/3600 runs bit-identical to the published results
-Use code with caution.
-This guarantees that your hardware, runtime environment, and dependency distributions match the original published experimental logs with absolute numerical precision.
-
-📜 Citation & License
-
-This project is licensed under the terms of the MIT License.
-If you use this evaluation framework, the taxonomy, or the data generation pipelines in your research, please cite the work as follows:
-```bibtex
-@article{matinkhah2026budget,
-  title={Budget-Aware Evaluation of Information-Driven Adaptive Search},
-  author={Matinkhah, M. A.},
-  journal={IEEE Transactions on Artificial Intelligence (Under Review)},
-  year={2026}
-}
 ```
+pip install numpy scipy pandas scikit-learn optuna
+```
+
+## Reproducing the main experiments (single CPU, about 25 minutes in total)
+
+```
+python experiments.py 2 10      # round 1 (H1-H4): raw_D2.csv, raw_D10.csv
+python experiments2.py 2        # round 2 (H5-H8): raw2_D2.csv
+python experiments2.py 10       # round 2: raw2_D10.csv
+python logging_exp.py           # diagnostics: logging_out.json
+python analysis2.py             # tables (t*.tex), tests, facts.json, fig_sweep2.pdf
+python fig_info.py              # fig_info.pdf
+```
+
+The `t*.tex` table bodies produced by `analysis2.py` were pasted into the corresponding tables of the LaTeX source.
+
+## Reproducing the extended checks (about 50 minutes on 2 CPU cores)
+
+```
+python tai_experiments_v2.py
+```
+
+Settings are in the `CONFIG` block at the top of the script; a `QUICK` flag gives a roughly one-minute smoke test whose numbers should not be interpreted. The script runs four studies and prints one report at the end (it also writes to the folder given by `OUT`, default `tai_results`):
+
+| Study | Content | Paper location |
+|---|---|---|
+| EXP-B | Synthetic suite at D = 2 and 10, 30 paired instances; charged, free and reuse variants of the learned controller and of an untrained linear rule `p = 0.05 + 0.75(1 - psi)`; four retrained controllers; Holm-corrected tests within question families; transfer check on the 8 functions not used in training; budget sweep 0.1B to 2B; diagnostics | Tables on extended checks, budget-sweep text |
+| EXP-A | Neural-network tuning: MLP on scikit-learn digits, 4 hyperparameters (learning rate, L2, width, batch size), B = 60 training runs of 25 epochs, 12 random train/validation splits; compared with random search, fixed `p`, History-BJS, the controllers and Optuna TPE | Tuning-task table |
+| EXP-C | Small budget, D = 5, B = 200, 10 instances per function, against TPE (descriptive only: 10 instances cannot reach significance after Holm correction over 140 tests) | Small-budget table |
+| Verification | Reruns of the synthetic suite are compared with the published raw results | See below |
+
+### Verification against the published raw results
+
+To check the synthetic rerun, set `REF_ZIP` in `CONFIG` to the path of the archive of published raw CSVs (`results_extended.zip`). The report then prints `N/N runs bit-identical`. In the reported run, all 7200 of 7200 runs were bit-identical, so the extended synthetic results use exactly the streams, engines and tables of the main experiments. If the check does not print `N/N`, do not use the synthetic numbers; the usual cause is a library-version difference.
+
+## Mapping to the paper
+
+| Paper element | Produced by |
+|---|---|
+| Main results, tests, Level 3 variants (Sections on results) | `experiments.py`, `experiments2.py`, `analysis2.py` |
+| Realized control-output entropy, probe-state diagnostics | `logging_exp.py` and the diagnostics block of `tai_experiments_v2.py` |
+| Capacity versus cost figure | `fig_info.py` |
+| Extended checks: retrained controllers, untrained rule, transfer, budget sweep, tuning task, small budget | `tai_experiments_v2.py` |
+
+The tests in the main analysis form one Holm family of 160 tests; the extended checks are exploratory and use Holm correction within each question family (learned controller against baselines, rule against baselines, learned against rule, training replicates). Effects are median log10 ratios, positive when the first method is worse.
+
+## Notes and limits
+
+- Results concern one single-solution engine, ten shifted synthetic functions, one small tuning task and the budgets tested; they are not claims about learned optimizers in general.
+- The best fixed-`sigma` hill climber and best constant `p` are chosen in-sample, which favors those references.
+- Offline training used 5400 FEs per dimension (2.7B at D = 2, 0.54B at D = 10; about 90B on the tuning objective) and is not charged.
+- The Gaussian-process Bayesian-optimization option in the extended script is off and untested.
+
+## Citation
+
+If you use this code, please cite the paper above. Citation details will be added when the paper is published.
