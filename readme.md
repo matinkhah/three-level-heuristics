@@ -1,87 +1,85 @@
-# Information Capacity and Acquisition Cost in Heuristic Search: A Three-Level Cybernetic Taxonomy
 
-[![Python Version](https://shields.io)](https://python.org)
-[![License: MIT](https://shields.io)](https://opensource.org)
+# Budget-Aware Evaluation of Information-Driven Adaptive Search
 
-This repository contains the official, **one-file reproducible experimental pipeline** for the paper *"Information State and Evaluation Cost in Single-Solution Heuristic Search: A Three-Level Taxonomy"*. 
 
-Rather than treating heuristic search blindly, this framework models the allocation of computational budgets between **state exploration** and **online learning** as a cybernetic feedback control problem. We introduce a rigorous three-level taxonomy to classify how much online information an algorithm acquires—and at what exact fitness evaluation (FE) cost.
+This repository contains the official, self-contained implementation pipeline for the paper "Budget-Aware Evaluation of Information-Driven Adaptive Search". [1] (https://github.com/matinkhah/three-level-heuristics#:~:text=official%2C%20one%2Dfile%20reproducible%20experimental%20pipeline)
+Rather than treating metaheuristics blindly, this framework models adaptive parameter control as a closed-loop system where information-gathering measurements compete directly with optimization steps for the exact same resource: objective function evaluations (FEs). [1] (https://github.com/matinkhah/three-level-heuristics#:~:text=state%20exploration%20and%20online%20learning)
 
----
+🔬 Framework & Core Methodology
 
-## 🔬 Framework & Taxonomy Overview
+The code evaluates adaptive search under a strict common-budget constraint, introducing metrics to separate the optimization value of a controller's decisions from the opportunity cost of acquiring its information:
+• Nominal Information Capacity (κ): The maximum bits of variety an information state can theoretically represent.
+• Acquisition Cost (a): The number of FEs consumed purely to build an information state.
+• Realized Control-Output Entropy (R): The empirical Shannon entropy of the quantized parameters produced along search trajectories.
+• Free-Information Counterfactuals: A diagnostic mechanism that runs adaptive policies without charging their probes to isolate the cost penalty (P) from behavioral value (V).
 
-The architecture systematically categorizes feedback control policies in heuristic search engines based on their nominal capacity (κ) and acquisition cost:
+Three-Level Information Taxonomy
 
-*   **Level 1 (Static/Constant):** Zero-capacity policies (p=const) serving as baseline information states.
-*   **Level 2 (Online Feedback Loops):** Dynamic adjustments using zero-cost historical indicators (rejection rates, success rules) or budget-charged Machine Learning (ML) probe-based feedback policies (Random Forest regression).
-*   **Level 3 (Global Landscape Tabulation):** High-cost acquisition models that tabulate macroscopic landscape properties via grid mapping combined with localized refinement.
+1. Level 1 (Uninformed): Baseline states with zero capacity (κ = 0), acting as static references (e.g., constant jump probability p).
+2. Level 2 (Compressed State): Dynamic feedback using zero-cost historical markers (rejection rates, success counters) or budget-charged Machine Learning (ML) probe-based feedback. [1] (https://github.com/matinkhah/three-level-heuristics#:~:text=Level%202%20(Online%20Feedback%20Loops)
+3. Level 3 (Exhaustive Tables): High-capacity spatial structures that tabulate macroscopic landscape landscapes (e.g., coordinate grids) followed by localized refinement. [1] (https://github.com/matinkhah/three-level-heuristics#:~:text=Level%203%20(Global%20Landscape%20Tabulation)
 
----
+💻 Repository Structure & Codebase
 
-## 🛠️ Repository Structure & Pipeline
+The implementation is written cleanly without heavy framework overhead to prioritize deterministic replication across random streams, seeds, and coordinate offsets: [1] (https://github.com/matinkhah/three-level-heuristics#:~:text=100%25%20exact%20numerical%20replication%20(preserving)
+• run_all_experiments.py: Implements the baseline pipeline over the initial 5 benchmark problems (Sphere, Rastrigin, Ackley, Griewank, Rosenbrock). [1] (https://github.com/matinkhah/three-level-heuristics#:~:text=run_all_experiments.py%20:%20The%20baseline%20pipeline)
+• extend_new_functions.py: Extends validation to 5 additional complex, non-differentiable, and highly multimodal landscapes (Schwefel 2.22, Weierstrass, HappyCat, Salomon, Schaffer N.2). [1] (https://github.com/matinkhah/three-level-heuristics#:~:text=extend_new_functions.py%20:%20The%20extension%20pipeline)
+• tai_experiments_v2.py: The unified, production-grade experiment runner. It includes the complete synthetic suite (\(D \in \{2, 10\}\)), the baseline repository checks, an embedded budget sweep (\(0.1B \dots 2B\)), a small-budget comparison with Optuna TPE (D=5, B=200), and a real-world machine learning workload (hyperparameter optimization of a Multi-Layer Perceptron on scikit-learn digits).
 
-The pipeline is completely integrated into highly optimized, deterministic scripts designed for **100% exact numerical replication** (preserving all random streams, instance shifts, and seeds):
+🚀 Execution Guide (Google Colab / Local Machine)
 
-*   `run_all_experiments.py`: The baseline pipeline executing the framework over the first 5 classic benchmark landscapes (Sphere, Rastrigin, Ackley, Griewank, Rosenbrock).
-*   `extend_new_functions.py`: The extension pipeline that expands validation over 5 additional complex, deceptive, and non-differentiable landscapes (Schwefel 2.22, Weierstrass, HappyCat, Salomon, Schaffer N.2) across dimensions D=2 and D=10.
 
-The scripts automate the entire workflow:
-\[\text{Data Generation} \longrightarrow \text{Wilcoxon/TOST Statistical Analysis} \longrightarrow \text{LaTeX Table Compilation (t*.tex)} \longrightarrow \text{PDF Visualization}\]
+Prerequisites
 
----
+The script compiles using standard mathematical and data manipulation utilities. Ensure you have the core scientific stack installed:
+bash
+pip install numpy scipy scikit-learn pandas optuna
+Use code with caution.
 
-## 🚀 How to Run (Google Colab / Local Python >= 3.9)
+1. Verification & Smoke Test
 
-No external heavy-duty dependencies are required. Standard scientific computing packages (`numpy`, `scipy`, `scikit-learn`, `matplotlib`, `pandas`) are sufficient.
+To confirm environment compatibility and verify your environment handles the data collection loop safely, toggle the QUICK flag to True at the top of the script and run:
+bash
+python tai_experiments_v2.py
+Use code with caution.
+(This completes in under 2 minutes with reduced sample seeds).
 
-### 1. Fast Verification (Smoke Test)
-To verify script sanity and environment compatibility in under **2 minutes**, open the script, set the quick flag to true, and run:
-```python
-QUICK = True
-```
-```bash
-python run_all_experiments.py
-```
+2. Full Reproduction Suite
 
-### 2. Full Production Run
-To reproduce the complete suite of raw data, LaTeX tables, and figures from scratch (~13–25 minutes depending on CPU cores):
-```python
-QUICK = False
-```
-```bash
-python run_all_experiments.py
-```
+To generate the complete dataset, descriptive statistics, and diagnostics used in the paper:
+1. Open tai_experiments_v2.py.
+2. Ensure QUICK = False is set.
+3. Set your target multiprocessing count (e.g., WORKERS = 2 for a standard free Colab instance).
+4. Run the file:
+bash
+python tai_experiments_v2.py
+Use code with caution.
+(Takes approximately 15–25 minutes depending on your CPU configuration). [1] (https://github.com/matinkhah/three-level-heuristics#:~:text=13%E2%80%9325%20minutes%20depending%20on%20CPU)
 
-### 3. Pipeline Extension & Re-Analysis
-To seamlessly append the 5 new complex benchmark functions to your pre-existing data matrices, run the extension cell script. It verifies your existing environment streams against stored benchmarks, runs the new functions safely via staged environments, and automatically recalculates the global statistical metrics:
-```bash
-python extend_new_functions.py
-```
+📊 Outputs & Validation Artifacts
 
----
+All results are compiled locally inside the auto-created ./tai_results/ directory and packed cleanly into tai_results.zip:
+• expB_synthetic.csv: Compiled raw records containing global evaluation trajectories across seeds and function landscapes.
+• expA_hpo.csv: Raw execution metrics mapping error performance profiles during the real ML workload training tasks.
+• expB_tests.csv / expA_tests_val.csv: Multi-family Holm-corrected paired Wilcoxon signed-rank matrices.
+• controller_training.json: Information log detailing training labels, mutual information profiles, and base entropy tracking measurements.
 
-## 📊 Outputs & Generated Artifacts
+Bit-Identical Integrity Check
 
-All outputs are structured systematically within the generated `./results` directory and archived into an auto-downloadable `results_extended.zip`:
+When running tai_experiments_v2.py, the pipeline automatically down-streams the raw reference zip (results_extended.zip) from GitHub and performs a cell-by-cell row check. A successful run will output:
+text
+3600/3600 runs bit-identical to the published results
+Use code with caution.
+This guarantees that your hardware, runtime environment, and dependency distributions match the original published experimental logs with absolute numerical precision.
 
-*   `raw_D*.csv` / `raw2_D*.csv`: Compiled raw fitness and evaluation cost arrays per seed.
-*   `facts.json`: Centralized data store containing all computed bootstrap confidence intervals, exact p-values, and descriptive metrics.
-*   `t2_main_D*.tex` to `t10_success.tex`: Polished, publication-ready LaTeX table bodies.
-*   `fig_sweep2.pdf`: Log-scaled performance profiles showing structural behavior under varying control limits.
-*   `fig_info.pdf`: Systemic mapping of nominal information capacity against physical acquisition cost.
+📜 Citation & License
 
----
-
-## 📜 Citation & License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-```bibtex
-@article{matinkhah2026information,
-  title={Information Capacity and Acquisition Cost in Heuristic Search: A Three-Level Cybernetic Taxonomy},
+This project is licensed under the terms of the MIT License.
+If you use this evaluation framework, the taxonomy, or the data generation pipelines in your research, please cite the work as follows:
+bibtex
+@article{matinkhah2026budget,
+  title={Budget-Aware Evaluation of Information-Driven Adaptive Search},
   author={Matinkhah, M. A.},
-  journal={IEEE Transactions on Cybernetics (Under Review)},
+  journal={IEEE Transactions on Artificial Intelligence (Under Review)},
   year={2026}
 }
-```
